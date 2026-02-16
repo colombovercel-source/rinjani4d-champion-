@@ -96,60 +96,61 @@
     <div class="status" id="status"></div>
   </div>
 
-  <!-- Supabase CDN -->
+  <!-- Supabase CDN (WAJIB SATU KALI SAJA) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // ===============================
-    // KONFIGURASI SUPABASE (PENTING)
-    // ===============================
-    const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
+    (function () {
+      // CEGAH INISIALISASI GANDA
+      if (window.sb) return;
 
-    const supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+      const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
+      const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_KAMU_DI_SINI";
 
-    const btn = document.getElementById("submitBtn");
-    const statusEl = document.getElementById("status");
+      window.sb = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+      );
 
-    btn.addEventListener("click", async () => {
-      const userId = document.getElementById("user_id").value.trim();
-      const deposit = document.getElementById("deposit").value.trim();
+      const btn = document.getElementById("submitBtn");
+      const statusEl = document.getElementById("status");
 
-      if (!userId || !deposit) {
-        statusEl.textContent = "❌ User ID dan nominal wajib diisi";
-        statusEl.style.color = "#ffb703";
-        return;
-      }
+      btn.addEventListener("click", async () => {
+        const userId = document.getElementById("user_id").value.trim();
+        const deposit = document.getElementById("deposit").value.trim();
 
-      btn.disabled = true;
-      statusEl.textContent = "⏳ Mengirim data...";
-      statusEl.style.color = "#ffd166";
+        if (!userId || !deposit) {
+          statusEl.textContent = "❌ User ID dan nominal wajib diisi";
+          statusEl.style.color = "#ffb703";
+          return;
+        }
 
-      const { error } = await supabase
-        .from("bonus_claims")
-        .insert([
-          {
-            user_id: userId,
-            deposit_amount: Number(deposit),
-            status: "Pending"
-          }
-        ]);
+        btn.disabled = true;
+        statusEl.textContent = "⏳ Mengirim data...";
+        statusEl.style.color = "#ffd166";
 
-      if (error) {
-        console.error(error);
-        statusEl.textContent = "❌ Gagal mengirim data";
-        statusEl.style.color = "#ff6b6b";
-        btn.disabled = false;
-        return;
-      }
+        const { error } = await window.sb
+          .from("bonus_claims")
+          .insert([
+            {
+              user_id: userId,
+              deposit_amount: Number(deposit),
+              status: "Pending"
+            }
+          ]);
 
-      statusEl.textContent = "✅ Klaim berhasil dikirim, menunggu approval admin";
-      statusEl.style.color = "#06d6a0";
-      btn.disabled = true;
-    });
+        if (error) {
+          console.error(error);
+          statusEl.textContent = "❌ Gagal mengirim data";
+          statusEl.style.color = "#ff6b6b";
+          btn.disabled = false;
+          return;
+        }
+
+        statusEl.textContent = "✅ Klaim berhasil dikirim, menunggu approval admin";
+        statusEl.style.color = "#06d6a0";
+      });
+    })();
   </script>
 
 </body>
