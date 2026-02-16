@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RINJANI4D – Klaim Bonus Deposit</title>
+
+<style>
+:root {
+  --primary:#0f2a44;
+  --accent:#d4af37;
+  --bg:#0b1d2d;
+  --card:#122c44;
+  --text:#ffffff;
+  --muted:#bfc9d1;
+}
+
+* { box-sizing:border-box; font-family:Arial, sans-serif; }
+
+body {
+  margin:0;
+  background:linear-gradient(135deg,var(--bg),#071522);
+  color:var(--text);
+}
+
+.container {
+  max-width:480px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.card {
+  background:var(--card);
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  margin-bottom:20px;
+}
+
+h1 {
+  font-size:20px;
+  text-align:center;
+  color:var(--accent);
+  margin-bottom:10px;
+}
+
+p.sub {
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+
+input, select {
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  margin:8px 0;
+  font-size:14px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:var(--accent);
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button.secondary {
+  background:#1e3f5f;
+  color:#fff;
+  margin-top:8px;
+}
+
+.status {
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:20px;
+}
+
+.Pending { background:#f1c40f; color:#000; }
+.Approved { background:#2ecc71; color:#000; }
+.Rejected { background:#e74c3c; color:#fff; }
+
+.history {
+  max-height:220px;
+  overflow-y:auto;
+  margin-top:10px;
+}
+
+.history-item {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:13px;
+}
+
+.admin-login, .admin-panel {
+  display:none;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+th, td {
+  padding:8px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  text-align:left;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- USER CLAIM -->
+  <div class="card">
+    <h1>🎁 Bonus Deposit 100%</h1>
+    <p class="sub">Ajukan klaim bonus, diverifikasi oleh CS RINJANI4D</p>
+
+    <input id="userId" placeholder="User ID">
+    <select id="deposit">
+      <option value="">Nominal Deposit</option>
+      <option>50.000</option>
+      <option>100.000</option>
+      <option>200.000</option>
+      <option>500.000</option>
+    </select>
+
+    <button onclick="submitClaim()">Ajukan Klaim Bonus</button>
+    <button class="secondary" onclick="openCS()">Hubungi CS</button>
+  </div>
+
+  <!-- RIWAYAT -->
+  <div class="card">
+    <h1>📜 Riwayat Klaim</h1>
+    <div class="history" id="history"></div>
+  </div>
+
+  <!-- ADMIN LOGIN -->
+  <div class="card admin-login" id="adminLogin">
+    <h1>🔐 Admin Login</h1>
+    <input type="password" id="adminPin" placeholder="PIN Admin">
+    <button onclick="loginAdmin()">Login</button>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="card admin-panel" id="adminPanel">
+    <h1>🧑‍💼 Admin Dashboard</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Deposit</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="adminTable"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const ADMIN_PIN = "4321";
+let historyData = JSON.parse(localStorage.getItem("claimHistory")) || [];
+
+function openCS(){
+  window.open("https://rinjanipuncak.com","_blank");
+}
+
+function submitClaim(){
+  const userId = userIdInput().trim();
+  const deposit = document.getElementById("deposit").value;
+
+  if(!userId || !deposit) return alert("Lengkapi data.");
+
+  if(historyData.find(h=>h.userId===userId)){
+    return alert("User ID ini sudah pernah klaim.");
+  }
+
+  const claim = {
+    userId,
+    deposit,
+    status:"Pending",
+    time:new Date().toLocaleString("id-ID")
+  };
+
+  historyData.unshift(claim);
+  save();
+  render();
+
+  // simulasi admin approve
+  setTimeout(()=>{
+    claim.status="Approved";
+    save(); render();
+  },15000);
+}
+
+function render(){
+  const history = document.getElementById("history");
+  history.innerHTML="";
+  historyData.forEach(h=>{
+    history.innerHTML+=`
+      <div class="history-item">
+        <div>${h.userId}<br><small>${h.time}</small></div>
+        <span class="status ${h.status}">${h.status}</span>
+      </div>`;
+  });
+}
+
+function loginAdmin(){
+  if(document.getElementById("adminPin").value===ADMIN_PIN){
+    document.getElementById("adminLogin").style.display="none";
+    document.getElementById("adminPanel").style.display="block";
+    renderAdmin();
+  } else alert("PIN salah");
+}
+
+function renderAdmin(){
+  const t=document.getElementById("adminTable");
+  t.innerHTML="";
+  historyData.forEach((h,i)=>{
+    t.innerHTML+=`
+      <tr>
+        <td>${h.userId}</td>
+        <td>${h.deposit}</td>
+        <td>${h.status}</td>
+        <td>
+          ${h.status==="Pending"?
+          `<button onclick="setStatus(${i},'Approved')">✔</button>
+           <button onclick="setStatus(${i},'Rejected')">✖</button>`:"-"}
+        </td>
+      </tr>`;
+  });
+}
+
+function setStatus(i,s){
+  historyData[i].status=s;
+  save(); render(); renderAdmin();
+}
+
+function save(){
+  localStorage.setItem("claimHistory",JSON.stringify(historyData));
+}
+
+function userIdInput(){
+  return document.getElementById("userId").value;
+}
+
+// init
+render();
+document.getElementById("adminLogin").style.display="block";
+</script>
+
+</body>
+</html>
