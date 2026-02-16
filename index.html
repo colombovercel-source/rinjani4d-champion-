@@ -1,164 +1,145 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>RINJANI4D – Klaim Bonus</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RINJANI4D – Klaim Bonus</title>
 
-<style>
-body{
-  margin:0;
-  height:100vh;
-  background:#0b1c2d;
-  font-family:Arial;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  color:#fff;
-}
-.box{
-  width:340px;
-  background:#132c44;
-  padding:25px;
-  border-radius:12px;
-}
-.brand{
-  text-align:center;
-  color:#d4af37;
-  font-weight:bold;
-  letter-spacing:2px;
-}
-h2{text-align:center}
-input,button{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border-radius:6px;
-  border:none;
-}
-button{
-  background:#d4af37;
-  font-weight:bold;
-  cursor:pointer;
-}
-button:disabled{background:#555}
-.status{
-  margin-top:15px;
-  padding:12px;
-  border-radius:6px;
-  text-align:center;
-}
-.pending{background:#2b3e55}
-.approved{background:#1e7f43}
-.rejected{background:#8b1e1e}
-small{color:#ccc}
-</style>
-</head>
+  <!-- SUPABASE CDN (HANYA 1 KALI) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<body>
-<div class="box">
-  <div class="brand">RINJANI4D</div>
-  <h2>Klaim Bonus Deposit</h2>
-
-  <input id="user_id" placeholder="User ID">
-  <input id="deposit" type="number" placeholder="Nominal Deposit">
-  <button id="btn">Ajukan Bonus</button>
-
-  <div id="result"></div>
-</div>
-
-<script>
-const supabase = supabaseJs.createClient(
-  "https://PROJECT_ID.supabase.co",
-  "PUBLIC_ANON_KEY"
-)
-
-const userInput = document.getElementById("user_id")
-const depositInput = document.getElementById("deposit")
-const btn = document.getElementById("btn")
-const result = document.getElementById("result")
-
-btn.onclick = submitClaim
-userInput.onblur = checkStatus
-
-function showStatus(status, reason){
-  if(status==="Pending"){
-    result.innerHTML=`<div class="status pending">⏳ Klaim sedang diproses</div>`
-  }
-  if(status==="Approved"){
-    result.innerHTML=`<div class="status approved">✅ Klaim disetujui Admin</div>`
-  }
-  if(status==="Rejected"){
-    result.innerHTML=`
-      <div class="status rejected">
-        ❌ Klaim ditolak<br><small>${reason}</small>
-      </div>`
-  }
-}
-
-async function checkStatus(){
-  const user_id = userInput.value.trim()
-  if(!user_id) return
-
-  const { data } = await supabase
-    .from("bonus_claims")
-    .select("*")
-    .eq("user_id", user_id)
-    .maybeSingle()
-
-  if(data){
-    showStatus(data.status, data.reject_reason)
-    btn.disabled = true
-  }
-}
-
-async function submitClaim(){
-  const user_id = userInput.value.trim()
-  const deposit = depositInput.value
-
-  if(!user_id || !deposit){
-    alert("Lengkapi User ID & Nominal Deposit")
-    return
-  }
-
-  btn.innerText = "Memproses..."
-  btn.disabled = true
-
-  const { data:exist } = await supabase
-    .from("bonus_claims")
-    .select("id,status,reject_reason")
-    .eq("user_id", user_id)
-
-  if(exist.length){
-    showStatus(exist[0].status, exist[0].reject_reason)
-    return
-  }
-
-  const { error } = await supabase
-    .from("bonus_claims")
-    .insert({ user_id, deposit, status:"Pending" })
-
-  if(error){
-    alert("ERROR: " + error.message)
-    btn.disabled=false
-    btn.innerText="Ajukan Bonus"
-    return
-  }
-
-  showStatus("Pending")
-}
-
-supabase
-  .channel("member-live")
-  .on("postgres_changes",
-    { event:"UPDATE", schema:"public", table:"bonus_claims" },
-    payload=>{
-      if(payload.new.user_id === userInput.value.trim()){
-        showStatus(payload.new.status, payload.new.reject_reason)
-      }
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1b2a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-  )
-  .subscribe()
-</script>
+
+    .card {
+      background: #1b263b;
+      padding: 24px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #e0c36d;
+    }
+
+    label {
+      font-size: 14px;
+      display: block;
+      margin-top: 12px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      margin-top: 18px;
+      width: 100%;
+      padding: 12px;
+      background: #e0c36d;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>RINJANI4D</h1>
+
+    <label>User ID</label>
+    <input type="text" id="user_id" placeholder="contoh: rinjani123" />
+
+    <label>Nominal Deposit</label>
+    <input type="number" id="deposit" placeholder="contoh: 100000" />
+
+    <button id="claimBtn">Ajukan Bonus</button>
+
+    <div class="status" id="statusText"></div>
+  </div>
+
+  <script>
+    /* ===============================
+       GANTI 2 BARIS DI BAWAH INI SAJA
+    ================================= */
+    const SUPABASE_URL = "https://XXXX.supabase.co";
+    const SUPABASE_ANON_KEY = "PASTE_ANON_PUBLIC_KEY_KAMU";
+
+    const supabase = supabaseJs.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    /* ===============================
+       LOGIKA SUBMIT KLAIM
+    ================================= */
+    const btn = document.getElementById("claimBtn");
+    const statusText = document.getElementById("statusText");
+
+    btn.addEventListener("click", async () => {
+      const userId = document.getElementById("user_id").value.trim();
+      const deposit = document.getElementById("deposit").value.trim();
+
+      if (!userId || !deposit) {
+        statusText.textContent = "❌ User ID dan nominal wajib diisi";
+        return;
+      }
+
+      btn.disabled = true;
+      statusText.textContent = "⏳ Mengirim klaim...";
+
+      const { error } = await supabase
+        .from("bonus_claims")
+        .insert([
+          {
+            user_id: userId,
+            deposit: Number(deposit),
+            status: "Pending"
+          }
+        ]);
+
+      if (error) {
+        console.error(error);
+        statusText.textContent = "❌ Gagal: " + error.message;
+        btn.disabled = false;
+      } else {
+        statusText.textContent = "✅ Klaim berhasil dikirim (Pending)";
+        document.getElementById("user_id").value = "";
+        document.getElementById("deposit").value = "";
+      }
+    });
+  </script>
+
 </body>
 </html>
