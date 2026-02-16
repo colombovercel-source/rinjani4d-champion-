@@ -2,113 +2,181 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Admin RINJANI4D</title>
+<title>RINJANI4D – Klaim Bonus</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-  background:#08121f;
+:root{
+  --bg:#0b1c2d;
+  --card:#132c44;
+  --gold:#d4af37;
+  --text:#fff;
+  --muted:#b8c2cc;
+  --success:#1e7f43;
+  --danger:#8b1e1e;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  height:100vh;
+  background:var(--bg);
   font-family:Arial;
-  color:#fff;
-  padding:20px;
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
-.login, .dashboard {
-  max-width:500px;
-  margin:auto;
+.card{
+  background:var(--card);
+  width:340px;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 15px 30px rgba(0,0,0,.4);
 }
-input,button {
+.brand{
+  text-align:center;
+  color:var(--gold);
+  font-weight:bold;
+  letter-spacing:2px;
+  margin-bottom:10px;
+}
+h2{
+  text-align:center;
+  margin-top:0;
+}
+input,button{
   width:100%;
   padding:10px;
   margin-top:10px;
-}
-button {
-  background:#ffd36a;
+  border-radius:6px;
   border:none;
+}
+button{
+  background:var(--gold);
+  font-weight:bold;
   cursor:pointer;
 }
-.card {
-  background:#132c44;
-  padding:10px;
-  margin-top:10px;
-  border-radius:5px;
+button:disabled{
+  background:#555;
+  cursor:not-allowed;
 }
-.status {
-  font-size:14px;
-  margin-top:5px;
+.status{
+  margin-top:15px;
+  padding:12px;
+  border-radius:6px;
+  text-align:center;
+  animation:fade .3s ease;
+}
+.pending{background:#2b3e55}
+.approved{background:var(--success)}
+.rejected{background:var(--danger)}
+small{color:var(--muted)}
+@keyframes fade{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}
 }
 </style>
 </head>
 
 <body>
 
-<div class="login" id="login">
-  <h2>Admin Login</h2>
-  <input id="email" placeholder="Admin Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-</div>
+<div class="card">
+  <div class="brand">RINJANI4D</div>
+  <h2>Klaim Bonus Deposit</h2>
 
-<div class="dashboard" id="dashboard" style="display:none">
-  <h2>Dashboard Admin</h2>
-  <div id="list"></div>
+  <input id="user_id" placeholder="User ID">
+  <input id="deposit" type="number" placeholder="Nominal Deposit">
+  <button id="btn" onclick="submitClaim()">Ajukan Bonus</button>
+
+  <div id="result"></div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://PROJECT_ID.supabase.co"
 const SUPABASE_KEY = "PUBLIC_ANON_KEY"
 
-const supabase = supabaseJs.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-)
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY)
 
-async function login() {
-  const email = document.getElementById("email").value
-  const password = document.getElementById("password").value
+const userInput = document.getElementById("user_id")
+const result = document.getElementById("result")
+const btn = document.getElementById("btn")
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email, password
-  })
+userInput.addEventListener("blur", checkStatus)
 
-  if (error) {
-    alert("Login gagal")
-    return
-  }
-
-  document.getElementById("login").style.display="none"
-  document.getElementById("dashboard").style.display="block"
-  load()
+function rupiah(x){
+  return "Rp " + Number(x).toLocaleString("id-ID")
 }
 
-async function load() {
+async function checkStatus(){
+  const user_id = userInput.value.trim()
+  if(!user_id) return
+
   const { data } = await supabase
     .from("bonus_claims")
     .select("*")
-    .order("created_at",{ascending:false})
+    .eq("user_id", user_id)
+    .single()
 
-  const list = document.getElementById("list")
-  list.innerHTML=""
-
-  data.forEach(c=>{
-    list.innerHTML+=`
-      <div class="card">
-        <b>${c.user_id}</b><br>
-        Deposit: Rp ${c.deposit}<br>
-        <div class="status">Status: ${c.status}</div>
-        <button onclick="update('${c.id}','Approved')">Approve</button>
-        <button onclick="update('${c.id}','Rejected')">Reject</button>
-      </div>
-    `
-  })
+  if(data){
+    showStatus(data.status, data.reject_reason)
+    btn.disabled = true
+  }
 }
 
-async function update(id,status){
-  await supabase
+function showStatus(status, reason=null){
+  if(status==="Pending"){
+    result.innerHTML=`<div class="status pending">⏳ Klaim sedang diproses</div>`
+  }
+  if(status==="Approved"){
+    result.innerHTML=`<div class="status approved">✅ Klaim disetujui Admin</div>`
+  }
+  if(status==="Rejected"){
+    result.innerHTML=`
+      <div class="status rejected">
+        ❌ Klaim ditolak<br>
+        <small>${reason}</small>
+      </div>`
+  }
+}
+
+async function submitClaim(){
+  const user_id = userInput.value.trim()
+  const deposit = document.getElementById("deposit").value
+
+  if(!user_id || !deposit){
+    alert("Silakan lengkapi data dengan benar")
+    return
+  }
+
+  btn.innerText="Memproses..."
+  btn.disabled=true
+
+  const { data:exist } = await supabase
     .from("bonus_claims")
-    .update({status})
-    .eq("id",id)
-  load()
+    .select("status,reject_reason")
+    .eq("user_id", user_id)
+
+  if(exist.length){
+    showStatus(exist[0].status, exist[0].reject_reason)
+    return
+  }
+
+  await supabase.from("bonus_claims").insert({
+    user_id,
+    deposit,
+    status:"Pending"
+  })
+
+  showStatus("Pending")
 }
+
+supabase.channel("member-realtime")
+.on("postgres_changes",{event:"UPDATE",schema:"public",table:"bonus_claims"},payload=>{
+  if(payload.new.user_id===userInput.value.trim()){
+    showStatus(payload.new.status, payload.new.reject_reason)
+  }
+})
+.subscribe()
 </script>
 
 </body>
