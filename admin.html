@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Admin RINJANI4D</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  background:#08121f;
+  font-family:Arial;
+  color:#fff;
+  padding:20px;
+}
+.login, .dashboard {
+  max-width:500px;
+  margin:auto;
+}
+input,button {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+button {
+  background:#ffd36a;
+  border:none;
+  cursor:pointer;
+}
+.card {
+  background:#132c44;
+  padding:10px;
+  margin-top:10px;
+  border-radius:5px;
+}
+.status {
+  font-size:14px;
+  margin-top:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login" id="login">
+  <h2>Admin Login</h2>
+  <input id="email" placeholder="Admin Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<div class="dashboard" id="dashboard" style="display:none">
+  <h2>Dashboard Admin</h2>
+  <div id="list"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://PROJECT_ID.supabase.co"
+const SUPABASE_KEY = "PUBLIC_ANON_KEY"
+
+const supabase = supabaseJs.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+)
+
+async function login() {
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email, password
+  })
+
+  if (error) {
+    alert("Login gagal")
+    return
+  }
+
+  document.getElementById("login").style.display="none"
+  document.getElementById("dashboard").style.display="block"
+  load()
+}
+
+async function load() {
+  const { data } = await supabase
+    .from("bonus_claims")
+    .select("*")
+    .order("created_at",{ascending:false})
+
+  const list = document.getElementById("list")
+  list.innerHTML=""
+
+  data.forEach(c=>{
+    list.innerHTML+=`
+      <div class="card">
+        <b>${c.user_id}</b><br>
+        Deposit: Rp ${c.deposit}<br>
+        <div class="status">Status: ${c.status}</div>
+        <button onclick="update('${c.id}','Approved')">Approve</button>
+        <button onclick="update('${c.id}','Rejected')">Reject</button>
+      </div>
+    `
+  })
+}
+
+async function update(id,status){
+  await supabase
+    .from("bonus_claims")
+    .update({status})
+    .eq("id",id)
+  load()
+}
+</script>
+
+</body>
+</html>
