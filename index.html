@@ -10,11 +10,11 @@
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(135deg, #0b1a2a, #122f4a);
-      color: #ffffff;
-      min-height: 100vh;
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
+      min-height: 100vh;
     }
 
     .card {
@@ -23,18 +23,17 @@
       max-width: 420px;
       padding: 24px;
       border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
 
     h1 {
-      margin: 0 0 8px;
+      margin-top: 0;
       text-align: center;
       color: #ffd166;
       font-size: 22px;
     }
 
     p {
-      margin: 0 0 16px;
       text-align: center;
       font-size: 14px;
       opacity: 0.9;
@@ -78,7 +77,6 @@
       margin-top: 16px;
       text-align: center;
       font-size: 14px;
-      min-height: 20px;
     }
   </style>
 </head>
@@ -99,7 +97,7 @@
     <div class="status" id="status"></div>
   </div>
 
-  <!-- SUPABASE CDN (HANYA SATU, WAJIB) -->
+  <!-- ✅ SUPABASE CDN (HANYA SATU, JANGAN DOBEL) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
@@ -107,10 +105,12 @@
     // KONFIGURASI SUPABASE (FIX)
     // ===============================
     const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
 
-    // 🔒 DECLARE SUPABASE SEKALI SAJA
-    const supabase = window.supabase.createClient(
+    // ⛔ JANGAN pakai nama "supabase"
+    // ✅ pakai "db" agar tidak conflict
+    const db = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -120,17 +120,10 @@
 
     btn.addEventListener("click", async () => {
       const userId = document.getElementById("user_id").value.trim();
-      const depositValue = document.getElementById("deposit").value.trim();
+      const deposit = document.getElementById("deposit").value.trim();
 
-      if (!userId || !depositValue) {
+      if (!userId || !deposit) {
         statusEl.textContent = "❌ User ID dan nominal wajib diisi";
-        statusEl.style.color = "#ffb703";
-        return;
-      }
-
-      const deposit = Number(depositValue);
-      if (deposit <= 0) {
-        statusEl.textContent = "❌ Nominal tidak valid";
         statusEl.style.color = "#ffb703";
         return;
       }
@@ -139,33 +132,25 @@
       statusEl.textContent = "⏳ Mengirim data...";
       statusEl.style.color = "#ffd166";
 
-      try {
-        const { error } = await supabase
-          .from("bonus_claims")
-          .insert([
-            {
-              user_id: userId,
-              deposit_amount: deposit,
-              status: "Pending"
-            }
-          ]);
+      const { error } = await db
+        .from("bonus_claims")
+        .insert([{
+          user_id: userId,
+          deposit_amount: Number(deposit),
+          status: "Pending"
+        }]);
 
-        if (error) {
-          console.error(error);
-          statusEl.textContent = "❌ Gagal mengirim data";
-          statusEl.style.color = "#ff6b6b";
-          btn.disabled = false;
-          return;
-        }
-
-        statusEl.textContent = "✅ Klaim berhasil dikirim, menunggu approval admin";
-        statusEl.style.color = "#06d6a0";
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "❌ Terjadi kesalahan sistem";
+      if (error) {
+        console.error(error);
+        statusEl.textContent = "❌ Gagal mengirim data";
         statusEl.style.color = "#ff6b6b";
         btn.disabled = false;
+        return;
       }
+
+      statusEl.textContent =
+        "✅ Klaim berhasil dikirim, menunggu approval admin";
+      statusEl.style.color = "#06d6a0";
     });
   </script>
 
