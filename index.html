@@ -2,16 +2,14 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RINJANI4D – Klaim Bonus</title>
-
-  <!-- SUPABASE CDN (HANYA 1 KALI) -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <title>RINJANI4D - Klaim Bonus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #0d1b2a;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0b1a2a, #122f4a);
       color: #fff;
       display: flex;
       justify-content: center;
@@ -20,45 +18,53 @@
     }
 
     .card {
-      background: #1b263b;
+      background: #0f2438;
+      width: 100%;
+      max-width: 420px;
       padding: 24px;
       border-radius: 12px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
 
     h1 {
+      margin-top: 0;
       text-align: center;
-      margin-bottom: 20px;
-      color: #e0c36d;
+      color: #ffd166;
+      font-size: 22px;
+    }
+
+    p {
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.9;
     }
 
     label {
-      font-size: 14px;
+      font-size: 13px;
+      margin-top: 14px;
       display: block;
-      margin-top: 12px;
     }
 
     input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin-top: 6px;
-      border-radius: 6px;
+      border-radius: 8px;
       border: none;
-      outline: none;
+      font-size: 14px;
     }
 
     button {
-      margin-top: 18px;
       width: 100%;
-      padding: 12px;
-      background: #e0c36d;
+      margin-top: 20px;
+      padding: 14px;
+      background: linear-gradient(135deg, #ffd166, #ffb703);
       color: #000;
-      border: none;
-      border-radius: 8px;
       font-weight: bold;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 15px;
     }
 
     button:disabled {
@@ -67,77 +73,82 @@
     }
 
     .status {
-      margin-top: 12px;
-      font-size: 14px;
+      margin-top: 16px;
       text-align: center;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h1>RINJANI4D</h1>
+    <h1>🎁 Klaim Bonus RINJANI4D</h1>
+    <p>Isi data dengan benar, admin akan memproses klaim Anda</p>
 
     <label>User ID</label>
-    <input type="text" id="user_id" placeholder="contoh: rinjani123" />
+    <input id="user_id" type="text" placeholder="contoh: rinjani123" />
 
-    <label>Nominal Deposit</label>
-    <input type="number" id="deposit" placeholder="contoh: 100000" />
+    <label>Nominal Deposit (Rp)</label>
+    <input id="deposit" type="number" placeholder="contoh: 100000" />
 
-    <button id="claimBtn">Ajukan Bonus</button>
+    <button id="submitBtn">Ajukan Klaim</button>
 
-    <div class="status" id="statusText"></div>
+    <div class="status" id="status"></div>
   </div>
 
-  <script>
-    /* ===============================
-       GANTI 2 BARIS DI BAWAH INI SAJA
-    ================================= */
-    const SUPABASE_URL = "https://XXXX.supabase.co";
-    const SUPABASE_ANON_KEY = "PASTE_ANON_PUBLIC_KEY_KAMU";
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    const supabase = supabaseJs.createClient(
+  <script>
+    // ===============================
+    // KONFIGURASI SUPABASE (PENTING)
+    // ===============================
+    const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
+
+    const supabase = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
 
-    /* ===============================
-       LOGIKA SUBMIT KLAIM
-    ================================= */
-    const btn = document.getElementById("claimBtn");
-    const statusText = document.getElementById("statusText");
+    const btn = document.getElementById("submitBtn");
+    const statusEl = document.getElementById("status");
 
     btn.addEventListener("click", async () => {
       const userId = document.getElementById("user_id").value.trim();
       const deposit = document.getElementById("deposit").value.trim();
 
       if (!userId || !deposit) {
-        statusText.textContent = "❌ User ID dan nominal wajib diisi";
+        statusEl.textContent = "❌ User ID dan nominal wajib diisi";
+        statusEl.style.color = "#ffb703";
         return;
       }
 
       btn.disabled = true;
-      statusText.textContent = "⏳ Mengirim klaim...";
+      statusEl.textContent = "⏳ Mengirim data...";
+      statusEl.style.color = "#ffd166";
 
       const { error } = await supabase
         .from("bonus_claims")
         .insert([
           {
             user_id: userId,
-            deposit: Number(deposit),
+            deposit_amount: Number(deposit),
             status: "Pending"
           }
         ]);
 
       if (error) {
         console.error(error);
-        statusText.textContent = "❌ Gagal: " + error.message;
+        statusEl.textContent = "❌ Gagal mengirim data";
+        statusEl.style.color = "#ff6b6b";
         btn.disabled = false;
-      } else {
-        statusText.textContent = "✅ Klaim berhasil dikirim (Pending)";
-        document.getElementById("user_id").value = "";
-        document.getElementById("deposit").value = "";
+        return;
       }
+
+      statusEl.textContent = "✅ Klaim berhasil dikirim, menunggu approval admin";
+      statusEl.style.color = "#06d6a0";
+      btn.disabled = true;
     });
   </script>
 
