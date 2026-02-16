@@ -10,11 +10,11 @@
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(135deg, #0b1a2a, #122f4a);
-      color: #fff;
+      color: #ffffff;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
     }
 
     .card {
@@ -22,18 +22,19 @@
       width: 100%;
       max-width: 420px;
       padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.45);
     }
 
     h1 {
-      margin-top: 0;
+      margin: 0 0 8px;
       text-align: center;
       color: #ffd166;
       font-size: 22px;
     }
 
     p {
+      margin: 0 0 16px;
       text-align: center;
       font-size: 14px;
       opacity: 0.9;
@@ -52,6 +53,7 @@
       border-radius: 8px;
       border: none;
       font-size: 14px;
+      outline: none;
     }
 
     button {
@@ -76,6 +78,7 @@
       margin-top: 16px;
       text-align: center;
       font-size: 14px;
+      min-height: 20px;
     }
   </style>
 </head>
@@ -96,45 +99,53 @@
     <div class="status" id="status"></div>
   </div>
 
-  <!-- Supabase CDN (WAJIB SATU KALI SAJA) -->
+  <!-- SUPABASE CDN (HANYA SATU, WAJIB) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    (function () {
-      // CEGAH INISIALISASI GANDA
-      if (window.sb) return;
+    // ===============================
+    // KONFIGURASI SUPABASE (FIX)
+    // ===============================
+    const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
 
-      const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
-      const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_KAMU_DI_SINI";
+    // 🔒 DECLARE SUPABASE SEKALI SAJA
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-      window.sb = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-      );
+    const btn = document.getElementById("submitBtn");
+    const statusEl = document.getElementById("status");
 
-      const btn = document.getElementById("submitBtn");
-      const statusEl = document.getElementById("status");
+    btn.addEventListener("click", async () => {
+      const userId = document.getElementById("user_id").value.trim();
+      const depositValue = document.getElementById("deposit").value.trim();
 
-      btn.addEventListener("click", async () => {
-        const userId = document.getElementById("user_id").value.trim();
-        const deposit = document.getElementById("deposit").value.trim();
+      if (!userId || !depositValue) {
+        statusEl.textContent = "❌ User ID dan nominal wajib diisi";
+        statusEl.style.color = "#ffb703";
+        return;
+      }
 
-        if (!userId || !deposit) {
-          statusEl.textContent = "❌ User ID dan nominal wajib diisi";
-          statusEl.style.color = "#ffb703";
-          return;
-        }
+      const deposit = Number(depositValue);
+      if (deposit <= 0) {
+        statusEl.textContent = "❌ Nominal tidak valid";
+        statusEl.style.color = "#ffb703";
+        return;
+      }
 
-        btn.disabled = true;
-        statusEl.textContent = "⏳ Mengirim data...";
-        statusEl.style.color = "#ffd166";
+      btn.disabled = true;
+      statusEl.textContent = "⏳ Mengirim data...";
+      statusEl.style.color = "#ffd166";
 
-        const { error } = await window.sb
+      try {
+        const { error } = await supabase
           .from("bonus_claims")
           .insert([
             {
               user_id: userId,
-              deposit_amount: Number(deposit),
+              deposit_amount: deposit,
               status: "Pending"
             }
           ]);
@@ -149,8 +160,13 @@
 
         statusEl.textContent = "✅ Klaim berhasil dikirim, menunggu approval admin";
         statusEl.style.color = "#06d6a0";
-      });
-    })();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "❌ Terjadi kesalahan sistem";
+        statusEl.style.color = "#ff6b6b";
+        btn.disabled = false;
+      }
+    });
   </script>
 
 </body>
