@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Admin Panel - Klaim Bonus</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
@@ -16,8 +16,8 @@
     }
 
     h1 {
-      text-align: center;
       color: #ffd166;
+      text-align: center;
       margin-bottom: 30px;
     }
 
@@ -27,111 +27,135 @@
       margin: auto;
       border-collapse: collapse;
       background: #0f2438;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
     }
 
     th, td {
       padding: 14px;
       text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid #1c3a5a;
     }
 
     th {
-      background: #122f4a;
+      background: #123456;
       color: #ffd166;
     }
 
     button {
       padding: 6px 12px;
-      border: none;
       border-radius: 6px;
+      border: none;
       cursor: pointer;
       font-weight: bold;
     }
 
     .approve {
       background: #06d6a0;
-      color: #000;
     }
 
     .reject {
       background: #ef476f;
       color: #fff;
-      margin-left: 6px;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
-<h1>📋 Admin Panel - Klaim Bonus</h1>
+  <h1>📋 Admin Panel - Klaim Bonus</h1>
 
-<table>
-  <thead>
-    <tr>
-      <th>User ID</th>
-      <th>Deposit</th>
-      <th>Status</th>
-      <th>Aksi</th>
-    </tr>
-  </thead>
-  <tbody id="data">
-    <tr><td colspan="4">Loading data...</td></tr>
-  </tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Deposit</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="dataBody">
+      <tr>
+        <td colspan="4">Loading data...</td>
+      </tr>
+    </tbody>
+  </table>
 
-<!-- SUPABASE CDN (HANYA SEKALI) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <div class="status" id="status"></div>
 
-<script>
-  const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
-  const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_KAMU_DI_SINI";
+  <!-- ✅ SUPABASE CDN (HANYA SATU KALI) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+  <!-- ✅ SCRIPT UTAMA -->
+  <script>
+    const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
+    const SUPABASE_ANON_KEY = "GANTI_DENGAN_ANON_KEY_KAMU";
 
-  const tbody = document.getElementById("data");
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-  async function loadData() {
-    const { data, error } = await supabase
-      .from("bonus_claims")
-      .select("*")
-      .order("id", { ascending: false });
+    const tbody = document.getElementById("dataBody");
+    const statusEl = document.getElementById("status");
 
-    if (error) {
-      console.error(error);
-      tbody.innerHTML = `<tr><td colspan="4">Gagal load data</td></tr>`;
-      return;
+    async function loadData() {
+      const { data, error } = await supabase
+        .from("bonus_claims")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="4">❌ Gagal load data</td></tr>`;
+        return;
+      }
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4">Belum ada klaim</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${row.user_id}</td>
+          <td>Rp ${row.deposit_amount}</td>
+          <td>${row.status}</td>
+          <td>
+            <button class="approve" onclick="updateStatus('${row.id}', 'Approved')">Approve</button>
+            <button class="reject" onclick="updateStatus('${row.id}', 'Rejected')">Reject</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
     }
 
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4">Belum ada klaim</td></tr>`;
-      return;
+    async function updateStatus(id, status) {
+      const { error } = await supabase
+        .from("bonus_claims")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) {
+        alert("❌ Gagal update status");
+        console.error(error);
+        return;
+      }
+
+      loadData();
     }
 
-    tbody.innerHTML = "";
-
-    data.forEach(row => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${row.user_id}</td>
-        <td>${row.deposit_amount}</td>
-        <td>${row.status}</td>
-        <td>
-          <button class="approve">Approve</button>
-          <button class="reject">Reject</button>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  }
-
-  loadData();
-</script>
+    loadData();
+  </script>
 
 </body>
 </html>
