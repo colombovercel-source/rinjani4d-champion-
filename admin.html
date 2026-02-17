@@ -1,102 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Admin RINJANI4D</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <title>Admin - Bonus RINJANI4D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-body{background:#0b1c2d;color:#fff;font-family:Arial;padding:20px}
-h2{color:#d4af37}
-input,button{padding:8px;margin-top:5px}
-button{background:#d4af37;border:none;font-weight:bold}
-.card{background:#132c44;padding:15px;border-radius:10px;margin-bottom:10px}
-.badge{padding:4px 8px;border-radius:6px;font-size:12px}
-.Pending{background:#2b3e55}
-.Approved{background:#1e7f43}
-.Rejected{background:#8b1e1e}
-</style>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0b1a2a;
+      color: #fff;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffd166;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #1f3a56;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background: #122f4a;
+    }
+
+    button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .approve {
+      background: #06d6a0;
+      color: #000;
+    }
+
+    .reject {
+      background: #ff6b6b;
+      color: #000;
+    }
+  </style>
 </head>
-
 <body>
 
-<h2>Admin Login</h2>
-<div id="login">
-  <input id="email" placeholder="Email"><br>
-  <input id="password" type="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
-</div>
+  <h1>📋 Admin Panel - Klaim Bonus</h1>
 
-<div id="dash" style="display:none">
-  <h2>Dashboard</h2>
-  <button onclick="logout()">Logout</button>
-  <div id="list"></div>
-</div>
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Deposit</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="data"></tbody>
+  </table>
 
-<script>
-const ADMIN_EMAIL="admin@rinjani4d.com"
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-const supabase = supabaseJs.createClient(
-  "https://PROJECT_ID.supabase.co",
-  "PUBLIC_ANON_KEY"
-)
+  <script>
+    const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
 
-async function login(){
-  const email=email.value
-  const password=password.value
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-  const {data,error}=await supabase.auth.signInWithPassword({email,password})
-  if(error || data.user.email!==ADMIN_EMAIL){
-    alert("Akses ditolak")
-    return
-  }
+    const tbody = document.getElementById("data");
 
-  loginDiv.style.display="none"
-  dash.style.display="block"
-  load()
-}
+    async function loadData() {
+      const { data, error } = await supabase
+        .from("bonus_claims")
+        .select("*")
+        .order("id", { ascending: false });
 
-async function logout(){
-  await supabase.auth.signOut()
-  location.reload()
-}
+      if (error) {
+        alert("Gagal load data");
+        console.error(error);
+        return;
+      }
 
-async function load(){
-  const {data}=await supabase
-    .from("bonus_claims")
-    .select("*")
-    .order("created_at",{ascending:false})
+      tbody.innerHTML = "";
 
-  list.innerHTML=data.map(c=>`
-    <div class="card">
-      <b>${c.user_id}</b><br>
-      Deposit: ${c.deposit}<br>
-      <span class="badge ${c.status}">${c.status}</span><br>
-      <input id="r${c.id}" placeholder="Alasan reject">
-      <button onclick="approve('${c.id}')">Approve</button>
-      <button onclick="reject('${c.id}')">Reject</button>
-    </div>
-  `).join("")
-}
+      data.forEach(row => {
+        const tr = document.createElement("tr");
 
-async function approve(id){
-  await supabase.from("bonus_claims")
-    .update({status:"Approved",reject_reason:null})
-    .eq("id",id)
-}
+        tr.innerHTML = `
+          <td>${row.user_id}</td>
+          <td>Rp ${row.deposit_amount}</td>
+          <td>${row.status}</td>
+          <td>
+            <button class="approve" onclick="updateStatus('${row.id}','Approved')">Approve</button>
+            <button class="reject" onclick="updateStatus('${row.id}','Rejected')">Reject</button>
+          </td>
+        `;
 
-async function reject(id){
-  const reason=document.getElementById("r"+id).value
-  if(!reason){alert("Isi alasan reject");return}
-  await supabase.from("bonus_claims")
-    .update({status:"Rejected",reject_reason:reason})
-    .eq("id",id)
-}
+        tbody.appendChild(tr);
+      });
+    }
 
-supabase
-  .channel("admin-live")
-  .on("postgres_changes",{event:"*",schema:"public",table:"bonus_claims"},load)
-  .subscribe()
-</script>
+    async function updateStatus(id, status) {
+      const { error } = await supabase
+        .from("bonus_claims")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) {
+        alert("Gagal update");
+        console.error(error);
+        return;
+      }
+
+      loadData();
+    }
+
+    loadData();
+  </script>
+
 </body>
 </html>
