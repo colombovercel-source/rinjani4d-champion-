@@ -2,38 +2,46 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin - Bonus RINJANI4D</title>
+  <title>Admin Panel - Klaim Bonus</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: #0b1a2a;
+      background: linear-gradient(135deg, #0b1a2a, #122f4a);
       color: #fff;
-      padding: 20px;
+      min-height: 100vh;
+      padding: 30px;
     }
 
     h1 {
-      text-align: center;
       color: #ffd166;
+      margin-bottom: 20px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      background: #0f2438;
+      border-radius: 10px;
+      overflow: hidden;
     }
 
     th, td {
-      border: 1px solid #1f3a56;
-      padding: 10px;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
       text-align: center;
-      font-size: 14px;
     }
 
     th {
-      background: #122f4a;
+      background: #102a43;
+      color: #ffd166;
+      font-size: 14px;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.05);
     }
 
     button {
@@ -50,8 +58,9 @@
     }
 
     .reject {
-      background: #ff6b6b;
-      color: #000;
+      background: #ef476f;
+      color: #fff;
+      margin-left: 6px;
     }
   </style>
 </head>
@@ -68,14 +77,21 @@
         <th>Aksi</th>
       </tr>
     </thead>
-    <tbody id="data"></tbody>
+    <tbody id="dataBody">
+      <tr>
+        <td colspan="4">Loading data...</td>
+      </tr>
+    </tbody>
   </table>
 
-  <!-- Supabase CDN -->
+  <!-- SUPABASE CDN (HANYA SEKALI) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    const SUPABASE_URL = "https://lzjmyludurangnskrcyo.supabase.co";
+    // =====================
+    // KONFIGURASI SUPABASE
+    // =====================
+    const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
 
     const supabase = window.supabase.createClient(
@@ -83,7 +99,7 @@
       SUPABASE_ANON_KEY
     );
 
-    const tbody = document.getElementById("data");
+    const tbody = document.getElementById("dataBody");
 
     async function loadData() {
       const { data, error } = await supabase
@@ -92,8 +108,13 @@
         .order("id", { ascending: false });
 
       if (error) {
-        alert("Gagal load data");
         console.error(error);
+        tbody.innerHTML = `<tr><td colspan="4">Gagal load data</td></tr>`;
+        return;
+      }
+
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="4">Belum ada klaim</td></tr>`;
         return;
       }
 
@@ -101,7 +122,6 @@
 
       data.forEach(row => {
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
           <td>${row.user_id}</td>
           <td>Rp ${row.deposit_amount}</td>
@@ -111,22 +131,15 @@
             <button class="reject" onclick="updateStatus('${row.id}','Rejected')">Reject</button>
           </td>
         `;
-
         tbody.appendChild(tr);
       });
     }
 
     async function updateStatus(id, status) {
-      const { error } = await supabase
+      await supabase
         .from("bonus_claims")
         .update({ status })
         .eq("id", id);
-
-      if (error) {
-        alert("Gagal update");
-        console.error(error);
-        return;
-      }
 
       loadData();
     }
