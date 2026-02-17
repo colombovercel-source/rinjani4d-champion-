@@ -12,44 +12,46 @@
       background: linear-gradient(135deg, #0b1a2a, #122f4a);
       color: #fff;
       min-height: 100vh;
-      padding: 30px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
     }
 
     h1 {
+      text-align: center;
       color: #ffd166;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: #0f2438;
-      border-radius: 10px;
+      border-radius: 12px;
       overflow: hidden;
     }
 
     th, td {
-      padding: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 14px;
       text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
     th {
-      background: #102a43;
+      background: #12304d;
       color: #ffd166;
-      font-size: 14px;
-    }
-
-    tr:hover {
-      background: rgba(255,255,255,0.05);
     }
 
     button {
-      padding: 6px 10px;
+      padding: 6px 12px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      margin: 0 4px;
     }
 
     .approve {
@@ -58,88 +60,99 @@
     }
 
     .reject {
-      background: #ef476f;
-      color: #fff;
-      margin-left: 6px;
+      background: #ff6b6b;
+      color: #000;
     }
+
+    .status-pending { color: #ffd166; }
+    .status-approved { color: #06d6a0; }
+    .status-rejected { color: #ff6b6b; }
   </style>
 </head>
 <body>
 
-  <h1>📋 Admin Panel - Klaim Bonus</h1>
+  <div class="container">
+    <h1>📋 Admin Panel - Klaim Bonus</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Deposit</th>
-        <th>Status</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="dataBody">
-      <tr>
-        <td colspan="4">Loading data...</td>
-      </tr>
-    </tbody>
-  </table>
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Deposit</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="data">
+        <tr>
+          <td colspan="4">Loading data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-  <!-- SUPABASE CDN (HANYA SEKALI) -->
+  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // =====================
-    // KONFIGURASI SUPABASE
-    // =====================
     const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6am15aWxkdXJhbm5nc2tyY3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzU1NjUsImV4cCI6MjA4NjgxMTU2NX0.ybyZTOLYGMOjM_SucsfpsVU3WaL8qVY4m-1XYdK2J7Q";
+    const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_KAMU_DI_SINI";
 
-    const supabase = window.supabase.createClient(
+    // ❗ PAKAI NAMA sb (BUKAN supabase)
+    const sb = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
 
-    const tbody = document.getElementById("dataBody");
+    const tableBody = document.getElementById("data");
 
     async function loadData() {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("bonus_claims")
         .select("*")
         .order("id", { ascending: false });
 
       if (error) {
+        tableBody.innerHTML =
+          `<tr><td colspan="4">Gagal load data</td></tr>`;
         console.error(error);
-        tbody.innerHTML = `<tr><td colspan="4">Gagal load data</td></tr>`;
         return;
       }
 
-      if (!data.length) {
-        tbody.innerHTML = `<tr><td colspan="4">Belum ada klaim</td></tr>`;
+      if (data.length === 0) {
+        tableBody.innerHTML =
+          `<tr><td colspan="4">Belum ada klaim</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = "";
+      tableBody.innerHTML = "";
 
       data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.user_id}</td>
-          <td>Rp ${row.deposit_amount}</td>
-          <td>${row.status}</td>
-          <td>
-            <button class="approve" onclick="updateStatus('${row.id}','Approved')">Approve</button>
-            <button class="reject" onclick="updateStatus('${row.id}','Rejected')">Reject</button>
-          </td>
+        tableBody.innerHTML += `
+          <tr>
+            <td>${row.user_id}</td>
+            <td>Rp ${row.deposit_amount.toLocaleString()}</td>
+            <td class="status-${row.status.toLowerCase()}">${row.status}</td>
+            <td>
+              <button class="approve" onclick="updateStatus('${row.id}', 'Approved')">Approve</button>
+              <button class="reject" onclick="updateStatus('${row.id}', 'Rejected')">Reject</button>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
       });
     }
 
     async function updateStatus(id, status) {
-      await supabase
+      const { error } = await sb
         .from("bonus_claims")
         .update({ status })
         .eq("id", id);
+
+      if (error) {
+        alert("Gagal update status");
+        console.error(error);
+        return;
+      }
 
       loadData();
     }
