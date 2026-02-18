@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{font-family:Arial;background:#0b1a2a;color:#fff;padding:30px}
+table{width:100%;background:#0f2438;border-collapse:collapse}
+th,td{padding:10px;border:1px solid #1e3a5a;text-align:center}
+th{background:#123456;color:#ffd166}
+button{padding:6px 10px;margin:2px;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<h2>📋 Admin Klaim Bonus</h2>
+
+<table>
+<thead>
+<tr>
+<th>User ID</th>
+<th>Deposit</th>
+<th>Status</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody id="data">
+<tr><td colspan="4">Loading...</td></tr>
+</tbody>
+</table>
+
+<script>
+const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
+const SUPABASE_KEY = "PASTE_ANON_KEY_KAMU";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function loadData(){
+  const { data, error } = await sb.from("bonus_claims").select("*");
+  if(error){
+    document.getElementById("data").innerHTML =
+      "<tr><td colspan='4'>ERROR LOAD DATA</td></tr>";
+    console.error(error);
+    return;
+  }
+
+  let html="";
+  data.forEach(d=>{
+    html+=`
+    <tr>
+      <td>${d.user_id}</td>
+      <td>${d.deposit_amount}</td>
+      <td>${d.status}</td>
+      <td>
+        <button onclick="updateStatus(${d.id},'Approved')">Approve</button>
+        <button onclick="updateStatus(${d.id},'Rejected')">Reject</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById("data").innerHTML = html;
+}
+
+async function updateStatus(id,status){
+  await sb.from("bonus_claims").update({status}).eq("id",id);
+  loadData();
+}
+
+loadData();
+</script>
+
+</body>
+</html>
