@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Admin Klaim Bonus</title>
 
-  <!-- SUPABASE CDN (WAJIB CUMA 1x) -->
+  <!-- WAJIB: SUPABASE CDN HANYA SEKALI -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -14,9 +14,7 @@
       color: #fff;
       padding: 30px;
     }
-    h1 {
-      color: #ffcc00;
-    }
+    h1 { color: #ffcc00; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -44,28 +42,26 @@
       <th>User ID</th>
       <th>Deposit</th>
       <th>Status</th>
-      <th>Aksi</th>
     </tr>
   </thead>
   <tbody id="data">
-    <tr><td colspan="4">Loading data...</td></tr>
+    <tr><td colspan="3">Loading data...</td></tr>
   </tbody>
 </table>
 
 <script>
-  // 🔑 GANTI DENGAN ANON PUBLIC KEY ASLI (WAJIB)
-  const SUPABASE_URL = "https://lzjmyilduranngskrcyo.supabase.co";
-  const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_KAMU_DI_SINI";
+  // 🔴 JANGAN GANTI NAMA VARIABEL INI
+  // 🔴 JANGAN DUPLIKASI
 
-  const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
+  const supabaseClient = window.supabase.createClient(
+    "https://lzjmyilduranngskrcyo.supabase.co",
+    "PASTE_ANON_KEY_KAMU_DI_SINI"
   );
 
   async function loadData() {
     const tbody = document.getElementById("data");
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("bonus_claims")
       .select("*")
       .order("id", { ascending: false });
@@ -73,15 +69,15 @@
     tbody.innerHTML = "";
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error(error);
       tbody.innerHTML =
-        "<tr><td colspan='4'>ERROR LOAD DATA</td></tr>";
+        "<tr><td colspan='3'>ERROR LOAD DATA</td></tr>";
       return;
     }
 
     if (!data || data.length === 0) {
       tbody.innerHTML =
-        "<tr><td colspan='4'>Belum ada data</td></tr>";
+        "<tr><td colspan='3'>Belum ada data</td></tr>";
       return;
     }
 
@@ -91,7 +87,6 @@
           <td>${row.user_id}</td>
           <td>${row.deposit_amount}</td>
           <td>${row.status}</td>
-          <td>-</td>
         </tr>
       `;
     });
