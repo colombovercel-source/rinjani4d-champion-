@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Klaim Bonus</title>
+
+  <!-- SUPABASE CDN (HANYA 1x) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b1a2a;
+      color: #fff;
+      padding: 30px;
+    }
+    h1 {
+      color: #ffcc00;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #1e3a5a;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #122f4a;
+      color: #ffcc00;
+    }
+    button {
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📋 Admin Klaim Bonus</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>User ID</th>
+      <th>Deposit</th>
+      <th>Status</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody id="data">
+    <tr><td colspan="4">Loading data...</td></tr>
+  </tbody>
+</table>
+
+<script>
+  // === SUPABASE CLIENT (HANYA 1x) ===
+  const supabase = window.supabase.createClient(
+    "https://lzjmyilduranngskrcyo.supabase.co",
+    "YOUR_ANON_KEY"
+  );
+
+  async function loadData() {
+    const { data, error } = await supabase
+      .from("bonus_claims")
+      .select("*")
+      .order("id", { ascending: false });
+
+    const tbody = document.getElementById("data");
+    tbody.innerHTML = "";
+
+    if (error) {
+      console.error(error);
+      tbody.innerHTML = "<tr><td colspan='4'>ERROR LOAD DATA</td></tr>";
+      return;
+    }
+
+    if (data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>Belum ada data</td></tr>";
+      return;
+    }
+
+    data.forEach(row => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${row.user_id}</td>
+          <td>${row.deposit_amount}</td>
+          <td>${row.status}</td>
+          <td>-</td>
+        </tr>
+      `;
+    });
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>
